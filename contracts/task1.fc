@@ -5,9 +5,9 @@
 }
 
 int get_gcd(int a, int b) method_id {
-    if (a == 0) {
-        return b;
+    while b {
+        (a, b) = (b, a % b);
     }
 
-    return get_gcd(b % a, a);
+    return a;
 }
