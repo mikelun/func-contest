@@ -1,4 +1,14 @@
-import { Address, beginCell, Cell, Contract, contractAddress, ContractProvider, Sender, SendMode, TupleItemInt } from 'ton-core';
+import {
+    Address,
+    beginCell,
+    Cell,
+    Contract,
+    contractAddress,
+    ContractProvider,
+    Sender,
+    SendMode,
+    TupleItemInt,
+} from 'ton-core';
 
 export type Task1Config = {};
 
@@ -31,15 +41,21 @@ export class Task1 implements Contract {
         let valueA: TupleItemInt = {
             type: 'int',
             value: a,
-        }
+        };
 
         let valueB: TupleItemInt = {
             type: 'int',
             value: b,
-        }
+        };
 
         const result = await provider.get('get_gcd', [valueA, valueB]);
-        
+
         return result.stack.readNumber();
+    }
+
+    async test_example_data(provider: ContractProvider) {
+        const result = await provider.get('test_example_data', []);
+
+        return result.stack.readTuple();
     }
 }

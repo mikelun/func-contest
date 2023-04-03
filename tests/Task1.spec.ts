@@ -30,7 +30,7 @@ describe('Task1', () => {
         });
     });
 
-    it('should deploy', async () => {
+    it.skip('should deploy', async () => {
         // the check is done inside beforeEach
         // blockchain and task1 are ready to use
     });
