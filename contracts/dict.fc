@@ -1,0 +1,88 @@
+#include "imports/stdlib.fc";
+
+;;
+;; TON Dictionary Smart Contract
+;;
+
+int min_tons_for_storage() asm "10000000 PUSHINT"; ;; 0.01 TON
+
+;;
+;; Operations
+;;
+;; 9decfca4 - add
+;; f299fd64 - remove
+;;
+
+const op::add = "op::add"c;
+const op::remove = "op::remove"c;
+
+;;
+;; Storage
+;;
+;; 
+global slice storage::owner_address;
+global cell storage::dict;
+
+() load_data() inline {
+    slice ds = get_data().begin_parse();
+    
+    storage::owner_address = ds~load_msg_addr();
+    storage::dict = ds~load_dict();
+    if (slice_empty?(storage::dict)) {
+        storage::dict = new_dict();
+    }
+}
+
+() store_data() impure {
+    set_data(
+        begin_cell()
+        .store_slice(storage::owner_address)
+        .store_dict(storage::dict)
+        .end_cell()
+    );
+}
+
+slice parse_sender_address(cell in_msg_full) inline {
+    slice cs = in_msg_full.begin_parse();
+    var flags = cs~load_uint(4);
+    slice sender_address = cs~load_msg_addr();
+    return sender_address;
+}
+
+(int, slice) get_key(int key) method_id {
+    load_data();
+    (slice payload, int success) = dic.udict_get?(256, key);
+    throw_unless(98, success);
+
+    int valid_until = payload~load_uint(64);
+    return (valid_until, payload);
+}
+
+() recv_internal(int my_balance, int msg_value, cell in_msg_full, slice in_msg_body) impure {
+    int op = in_msg_body~load_uint(32);
+    int query_id = in_msg_body~load_uint(64);
+
+    slice sender_address = parse_sender_address(in_msg_full);
+    load_data();
+
+    if (op == op::add) {
+        int key = in_msg_body~load_uint(256);
+        dict~udict_set(256, key, in_msg_body);
+    } 
+
+    if (op == op::remove) {
+        int key = -1;
+        do {
+            (key, slice cs, int f) = dic.udict_get_next?(256, key);
+            if (f) {
+                int valid_until = cs~load_uint(64);
+                if (valid_until < now()) {
+                    dict~udict_delete?(256, key);
+                }
+            }
+        } until (~ f);
+
+        return ();
+    }
+    throw(1001);
+}
